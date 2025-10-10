@@ -168,10 +168,9 @@ fun4 x c y =
 -- 5040
 
 fact :: Int -> Int
-fact n =
-  if n == 0
-    then 1
-    else n * fact (n - 1)
+fact n
+  | n == 0 = 1
+  | otherwise = n * fact(n - 1)
 
 -- 3 + 4 * 7
 
@@ -186,7 +185,9 @@ fact n =
 -- 34
 
 fib :: Integer -> Integer
-fib = undefined
+fib 0 = 0
+fib 1 = 1
+fib n = fib (n - 1) + fib (n - 2)
 
 -- use the following "mathematical definition" to implement addition on natural numbers:
 -- myPlus x y = { y                        | x == 0    }
@@ -198,25 +199,29 @@ fib = undefined
 -- EXAMPLES
 -- >>> myPlus 50 19
 -- 69
---
+-- 69
 -- >>> myPlus 0 42
 -- 42
 
+
 myPlus :: Integer -> Integer -> Integer
-myPlus n m = undefined
+myPlus n m 
+  | n == 0 = m
+  | m == 0 = n 
+  | otherwise = succ (myPlus (pred n) m)
 
 -- same as above, implement multiplication on natural numbers recursively, using addition instead of succ
 -- EXAMPLES
 -- >>> myMult 3 23
 -- 69
---
 -- >>> myMult 0 42
 -- 0
---
 -- >>> myMult 1 42
 -- 42
 myMult :: Integer -> Integer -> Integer
-myMult n m = undefined
+myMult n m
+  | n == 0 || m == 0 = 0
+  | otherwise = myPlus (myMult (pred n) m) m
 
 -- Implement "fast exponentiation".
 -- This uses the following property:
@@ -229,10 +234,15 @@ myMult n m = undefined
 -- EXAMPLES
 -- >>> fastPow 3 4
 -- 81
+
 -- >>> fastPow 2 6
 -- 64
+
 fastPow :: Integer -> Integer -> Integer
-fastPow = undefined
+fastPow x n  
+  | n == 0 = 1
+  | even n = fastPow (x * x) (div n 2)
+  | otherwise = x * fastPow x (n - 1) 
 
 -- Define two mutually recursive functions which check whether a number is even or odd.
 -- Assume that the input is non-negative.
@@ -251,10 +261,12 @@ fastPow = undefined
 -- True
 
 isEven :: Integer -> Bool
-isEven x = undefined
+isEven 0 = True
+isEven x = isOdd (x - 1)
 
 isOdd :: Integer -> Bool
-isOdd x = undefined
+isOdd 0 = False
+isOdd x = isEven (x - 1)
 
 -- Define a function to check whether a given Integer is a prime number.
 -- Assume that the input is non-negative.
@@ -304,6 +316,13 @@ isOdd x = undefined
 -- True
 
 isPrime :: Integer -> Bool
-isPrime n = undefined
+isPrime n
+  | even n    = False
+  | otherwise = isPrimeHelper 3
+  where 
+    isPrimeHelper m
+      | m * m > n     = True 
+      | rem n m == 0  = False 
+      | otherwise     = isPrimeHelper (m + 2)
 
 -- vim: foldmethod=marker:
