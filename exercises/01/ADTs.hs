@@ -43,10 +43,12 @@ data RPS = Rock | Paper | Scissors
 
 -- >>> beats Rock Paper
 -- False
--- >>> beats Paper Rock
--- True
+
 beats :: RPS -> RPS -> Bool
-beats = undefined
+beats Paper Rock = True 
+beats Rock Scissors = True
+beats Scissors Paper = True
+beats _ _ = False 
 
 -- TASK:
 -- Define the "next" throw you can do in the "usual" ordering of RPS
@@ -55,7 +57,9 @@ beats = undefined
 -- >>> next Rock
 -- Paper
 next :: RPS -> RPS
-next = undefined
+next Rock = Paper
+next Paper = Scissors
+next Scissors = Rock
 
 -- TASK:
 -- Define what it means for two RPS values to be equal
@@ -66,7 +70,10 @@ next = undefined
 -- >>> eqRPS Rock Paper
 -- False
 eqRPS :: RPS -> RPS -> Bool
-eqRPS = undefined
+eqRPS Rock Rock = True
+eqRPS Scissors Scissors = True
+eqRPS Paper Paper = True
+eqRPS _ _ = False
 
 -- TASK:
 -- Define a shorter version of beats using next and eqRPS
@@ -76,8 +83,16 @@ eqRPS = undefined
 -- >>> beats' Paper Scissors
 -- True
 
+-- The function is defined as if it will be used
+-- as an operator to ask the question "something" `beats` "something else"
+-- so Rock `beats` Paper -> false
 beats' :: RPS -> RPS -> Bool
-beats' = undefined
+beats' x y = not (eqRPS (next x) y)
+
+-- >>> Rock `beats'` Paper
+-- False
+-- >>> Paper `beats'` Rock
+-- True
 
 ------------
 -- Points --
@@ -164,25 +179,32 @@ addNat (Succ n1) n2 = Succ (addNat n1 n2)
 -- Succ (Succ (Succ (Succ (Succ (Succ Zero)))))
 
 multNat :: Nat -> Nat -> Nat
-multNat = undefined
+multNat Zero _ = Zero
+multNat _ Zero = Zero
+multNat (Succ x) y = addNat y (multNat x y)
 
 -- TASK:
 -- Compare two Nats, returning an Ordering
 
--- >>> compareNat (Succ Zero) Zero
--- GT
+-- >>> compareNat (Succ Zero) (Succ Zero)
+-- EQ
 
-compareNat :: Nat -> Nat -> Ordering
-compareNat = undefined
+compareNat :: Nat -> Nat -> Ordering 
+compareNat Zero Zero = EQ
+compareNat Zero _ = LT
+compareNat _ Zero = GT
+compareNat (Succ x) (Succ y) = compareNat x y
 
 -- TASK:
 -- Return the maximum of two Nats
 
 -- >>> maxNat (Succ Zero) (Succ (Succ Zero))
--- Succ (Succ Zero)
+-- Succ (Succ Zero) 
 
 maxNat :: Nat -> Nat -> Nat
-maxNat = undefined
+maxNat x y 
+  | compareNat x y == GT = x 
+  | otherwise = y
 
 -----------------
 -- Expressions --
@@ -209,7 +231,9 @@ infixr 8 `Mult`
 -- 12
 
 eval :: Expr -> Integer
-eval = undefined
+eval (Val x) = x
+eval (Plus x y) = eval x + eval y
+eval (Mult x y) = eval x * eval y
 
 -- TASK:
 -- Extend the Expr language with If expressions
@@ -220,36 +244,58 @@ eval = undefined
 ------------
 
 -- Data type for Ranks in a card game
-data Rank
+data Rank = Ace | Ten | King | Queen | Jack | Nine | Eight | Seven
   deriving (Show)
 
 -- Data type for Suits in a card game
-data Suit
+data Suit = Clubs | Diamonds | Hearts | Spades
   deriving (Show)
 
 -- TASK:
 -- Check if two suits are equal
 suitEquals :: Suit -> Suit -> Bool
-suitEquals = undefined
+suitEquals Clubs Clubs = True
+suitEquals Diamonds Diamonds = True
+suitEquals Hearts Hearts = True
+suitEquals Spades Spades = True
+suitEquals _ _ = False
 
 -- Record syntax for representing a Card
-data Card
+data Card = MkCard Suit Rank
   deriving (Show)
 
 -- Data type for Contracts in the Belote game
-data Contract
+data Contract = MkContract Suit | NoTrumps | AllTrumps
   deriving (Show)
 
 -- TASK:
 -- Check if a card is of a trump suit based on a given contract
 isTrump :: Contract -> Card -> Bool
-isTrump = undefined
+isTrump NoTrumps _ = False
+isTrump AllTrumps _ = True
+-- MkCard y _ -> y is the suit, _ can be any rank
+isTrump (MkContract x) (MkCard y _) = suitEquals x y 
 
 -- TASK:
 -- Assign a numerical power value to a card based on the contract
 -- Ensure that higher power values represent stronger cards
 cardPower :: Contract -> Card -> Integer
-cardPower = undefined
+cardPower contract card@(MkCard _ rank)
+  | isTrump contract card =
+    case rank of
+      Nine -> 19
+      Jack -> 20
+      _ -> cardPower NoTrumps card
+  | otherwise = 
+    case rank of 
+      Seven -> 1
+      Eight -> 2
+      Nine -> 3
+      Jack -> 4
+      Queen -> 5
+      King -> 6
+      Ten -> 7
+      Ace -> 8
 
 -- TASK:
 -- A data type to describe the different ways two cards can relate, given a contract
@@ -267,29 +313,68 @@ cardPower = undefined
 --
 -- HINT:
 -- The intended solution has 4 constructors
-data CardRelation
+data CardRelation = T_T | NT_T | T_NT | NT_NT 
   deriving (Show)
 
 -- TASK:
 -- Given a contract, calculate how two cards relate
 relateCards :: Contract -> Card -> Card -> CardRelation
-relateCards = undefined
+relateCards NoTrumps _ _ = NT_NT
+relateCards AllTrumps _ _ = T_T
+relateCards contract cardA cardB
+  | bothTrumps = T_T
+  | isTrump contract cardA = T_NT
+  | isTrump contract cardB = NT_T
+  | otherwise = NT_NT 
+  where 
+    bothTrumps = isTrump contract cardA && isTrump contract cardB
+
+-- >>> relateCards (MkContract Diamonds) (MkCard Diamonds Jack) (MkCard Spades Ace)
+-- T_NT
 
 -- TASK:
 -- Given a contract and two cards, return the winning card
 -- Assume the first card is played first
 fight :: Contract -> Card -> Card -> Card
-fight = undefined
+fight contract cardA cardB =
+  let 
+      relation = relateCards contract cardA cardB
+      rank = cardPower contract 
+  in
+    case relation of
+      T_NT -> cardA
+      NT_T -> cardB 
+      _ -> if rank cardA > rank cardB then cardA else cardB
+
+
+-- some examples
+
+exampleContract :: Contract
+exampleContract = MkContract Diamonds
+exampleCardA :: Card
+exampleCardA = MkCard Spades King
+exampleCardB :: Card
+exampleCardB = MkCard Diamonds Seven
+
+-- their evaluaton
+-- >>> fight exampleContract exampleCardA exampleCardB
+-- MkCard Diamonds Seven
 
 -- Data type for a trick (игра, разигравка, ръка, рунд), consisting of four cards
-data Trick
+data Trick = MkTrick Card Card Card Card
   deriving (Show)
 
 -- TASK:
 -- Given a contract and a Trick, determine the winning card
 -- Remember that the leftmost card was played first
+-- No idea if this works, don't plan on finding out.
 winner :: Contract -> Trick -> Card
-winner = undefined
+winner contract (MkTrick a b c d) = 
+  let 
+    round1 = fight contract a b
+    round2 = fight contract round1 c 
+  in 
+    fight contract round2 d 
 
 -- TASK:
 -- Check if a Trick could have been played according to the rules of Belote

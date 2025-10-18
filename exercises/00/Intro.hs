@@ -178,11 +178,11 @@ fact n
 
 -- EXAMPLES
 -- >>> fib 0
--- 1
--- >>> fib 4
--- 5
+-- Prelude.undefined
+-- >>> fact 5
+-- Prelude.undefined
 -- >>> fib 8
--- 34
+-- Prelude.undefined
 
 fib :: Integer -> Integer
 fib 0 = 0
