@@ -146,11 +146,7 @@ const = undefined
 -- 45
 
 compose :: (b -> c) -> (a -> b) -> a -> c
-compose f g x = f (g x)
-
--- Wild UTF8 non-operator names
-猫 :: Integer
-猫 = 5
+compose f g = \x -> f (g x)
 
 -- Play around with the syntax (how many parenthesis can you stuff in here?)
 (.) :: (b -> c) -> (a -> b) -> a -> c
@@ -176,7 +172,9 @@ compose f g x = f (g x)
 -- 1024
 
 iterateN :: (a -> a) -> a -> Integer -> a
-iterateN = undefined
+iterateN _ x 0 = x 
+-- iterateN f x n = iterateN f (f x) (n - 1)
+iterateN f x n = f (iterateN f x (n - 1)) -- why not??
 
 -- TASK:
 -- Swap the two elements of a tuple
@@ -184,8 +182,9 @@ iterateN = undefined
 -- >>> swap $ MkTuple 42 69
 -- MkTuple 69 42
 
+
 swap :: Tuple a b -> Tuple b a
-swap = undefined
+swap (MkTuple a b) = MkTuple b a
 
 -- TASK:
 -- Apply a function to only the first component of a tuple
@@ -194,7 +193,7 @@ swap = undefined
 -- MkTuple 42 1337
 
 first :: (a -> b) -> Tuple a c -> Tuple b c
-first = undefined
+first f (MkTuple a b) = MkTuple (f a) b
 
 -- TASK:
 -- Convert a function operating on a tuple, to one that takes two arguments.
@@ -205,7 +204,7 @@ first = undefined
 -- 69
 
 curry :: (Tuple a b -> c) -> a -> b -> c
-curry = undefined
+curry f = \x -> \y -> f (MkTuple x y)
 
 -- TASK:
 -- Convert a two argument function, to one that takes a Tuple.
@@ -214,7 +213,7 @@ curry = undefined
 -- 69
 
 uncurry :: (a -> b -> c) -> Tuple a b -> c
-uncurry = undefined
+uncurry f (MkTuple a b) = f a b 
 
 -- TASK:
 -- > p `on` f
@@ -222,11 +221,12 @@ uncurry = undefined
 
 -- >>> let maxOnFirst = max `on` fstTuple in maxOnFirst (MkTuple 1 20) (MkTuple 2 100000)
 -- 2
+
 -- >>> let maxOnSum = max `on` sumTuple in maxOnSum (MkTuple 20 39) (MkTuple 12 34)
 -- 59
 
 on :: (b -> b -> c) -> (a -> b) -> a -> a -> c
-on = join . ((flip . ((.) .)) .) . (.)
+on f g x y = f (g x) (g y) 
 
 -- TASK:
 -- Execute a function, until the result starts sastifying a given predicate
@@ -235,11 +235,9 @@ on = join . ((flip . ((.) .)) .) . (.)
 -- 1372
 
 until :: (a -> Bool) -> (a -> a) -> a -> a
--- until p f x = if p x then x else until p f (f x)
-until = fix (ap ((.) . ap . (if' =<<)) . flip flip id . (liftM2 (.) .))
-
-if' :: Bool -> a -> a -> a
-if' p x y = if p then x else y
+until predicate func arg 
+  | predicate arg = arg
+  | otherwise = until predicate func (func arg)
 
 -- TASK:
 -- Apply two different functions to the two different arguments of a tuple
@@ -269,8 +267,9 @@ data Nat
 -- Can you implement a general enough higher-order function (called `foldNat` here), such that you can then use to
 -- implement both of `addNat` and `multNat` by passing suitable arguments? What are those arguments?
 --
--- foldNat :: ???
--- foldNat = ???
+foldNat :: (Nat -> Nat) -> Nat -> Nat -> Nat
+foldNat operation term next left right  
+  | 
 
 -- TASK:
 -- If your function is "good enough" you should also be able to implement exponentiation using it.
