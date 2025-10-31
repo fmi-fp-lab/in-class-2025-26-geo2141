@@ -307,11 +307,15 @@ and (x : xs) = x && and xs
 
 -- >>> all isPrime [2,3,7]
 -- True
--- >>> all isPrime [1,2,3,7]
+
+-- >>> all isPrime [1,2,3,7,8]
 -- False
 
+
+
 all :: (a -> Bool) -> [a] -> Bool
-all = undefined
+all _ [] = True
+all f (x : xs) = f x && all f xs
 
 -- TASK:
 -- Implement the cartesian product of two lists.
@@ -319,13 +323,17 @@ all = undefined
 
 -- >>> cartesian [1,2,3] [4,5,6]
 -- [(1,4),(1,5),(1,6),(2,4),(2,5),(2,6),(3,4),(3,5),(3,6)]
+
 -- >>> cartesian [] [4,5,6]
 -- []
 -- >>> cartesian [1,2,3] []
 -- []
 
 cartesian :: [a] -> [b] -> [(a, b)]
-cartesian = undefined
+cartesian _ [] = []
+cartesian [] _ = []
+cartesian [x] (y : ys) = (x, y) : cartesian [x] ys
+cartesian (x : xs) ls = append (cartesian [x] ls) (cartesian xs ls) 
 
 -- TASK:
 -- We can generalise cartesian to work with arbitrary functions instead of just (,),
@@ -342,7 +350,10 @@ cartesian = undefined
 -- [(1,4),(1,5),(1,6),(2,4),(2,5),(2,6),(3,4),(3,5),(3,6)]
 
 lift2List :: (a -> b -> c) -> [a] -> [b] -> [c]
-lift2List = undefined
+lift2List _ _ [] = []
+lift2List _ [] _ = []
+lift2List f [x] (y : ys) = f x y : lift2List f [x] ys
+lift2List f (x : xs) ls = append (lift2List f [x] ls) (lift2List f xs ls)  
 
 -- TASK:
 -- The "filtering" part of a list comprehension - leave only those elements, that satisfy the given predicate.
@@ -354,10 +365,11 @@ lift2List = undefined
 -- >>> filter even [1..10]
 -- [2,4,6,8,10]
 -- >>> filter isPrime [1..20]
--- [2,3,5,7,11,13,17,19]
+-- [1,2,3,5,7,11,13,17,19]
 
 filter :: (a -> Bool) -> [a] -> [a]
-filter = undefined
+filter _ [] = []
+filter f (x : xs) = if f x then x : filter f xs else filter f xs
 
 data Digit
   = Zero
@@ -394,7 +406,18 @@ data Digit
 -- Nothing
 
 parseDigit :: Char -> Maybe Digit
-parseDigit = undefined
+parseDigit = \case
+  '0' -> Just Zero
+  '1' -> Just One
+  '2' -> Just Two
+  '3' -> Just Three
+  '4' -> Just Four
+  '5' -> Just Five
+  '6' -> Just Six
+  '7' -> Just Seven
+  '8' -> Just Eight
+  '9' -> Just Nine 
+  _ -> Nothing
 
 -- TASK:
 -- See if all the values in a list xs are Just, returning Just xs only if they are.
@@ -404,17 +427,37 @@ parseDigit = undefined
 
 -- >>> validateList []
 -- Just []
+
 -- >>> validateList [Just 42, Just 6, Just 9]
 -- Just [42,6,9]
+
 -- >>> validateList [Nothing, Just 6, Just 9]
 -- Nothing
 -- >>> validateList [Just 42, Nothing, Just 9]
 -- Nothing
+
 -- >>> validateList [Just 42, Just 6, Nothing]
 -- Nothing
 
 validateList :: [Maybe a] -> Maybe [a]
-validateList = undefined
+validateList [] = Just []
+validateList ls = 
+  let 
+    isThereNothing :: [Maybe a] -> Bool 
+    isThereNothing [] = False
+    isThereNothing [x] = case x of 
+      Just _ -> False 
+      _ -> True 
+    isThereNothing (x : xs) = case x of 
+      Just _ -> isThereNothing xs 
+      Nothing -> True 
+    
+    generateList :: [Maybe a] -> [a]
+    generateList [] = []
+    generateList (Just k : xs) = k : generateList xs 
+    generateList (Nothing : _) = []
+  in
+    if isThereNothing ls then Nothing else Just (generateList ls)
 
 -- TASK:
 -- You often have a collection (list) of things, for each of which you want to
@@ -428,15 +471,24 @@ validateList = undefined
 
 -- >>> traverseListMaybe (\x -> if even x then Just x else Nothing) [2,4,6]
 -- Just [2,4,6]
+
 -- >>> traverseListMaybe (\x -> if even x then Just x else Nothing) [1,2,3]
 -- Nothing
+
+safeDiv :: Integer -> Integer -> Maybe Integer
+safeDiv _ 0 = Nothing 
+safeDiv x y = Just (x `div` y)
+
 -- >>> traverseListMaybe (5 `safeDiv`) [0,2]
 -- Nothing
+
 -- >>> traverseListMaybe (8 `safeDiv`) [3,2]
 -- Just [2,4]
 
+
 traverseListMaybe :: (a -> Maybe b) -> [a] -> Maybe [b]
-traverseListMaybe = undefined
+traverseListMaybe _ [] = Just []
+traverseListMaybe func ls = validateList (map func ls)
 
 -- TASK:
 -- Convert a list of digits to a number.
@@ -506,7 +558,9 @@ maybeMap = undefined
 -- [(1,4)]
 
 zip :: [a] -> [b] -> [(a, b)]
-zip = undefined
+zip _ [] = []
+zip [] _ = []
+zip (x : xs) (y : ys) = (x, y) : zip xs ys 
 
 -- TASK:
 -- And the generalised version of zip.
@@ -519,7 +573,9 @@ zip = undefined
 -- [[1,4],[2,5,7],[3]]
 
 zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
-zipWith = undefined
+zipWith _ _ [] = []
+zipWith _ [] _ = []
+zipWith func (x : xs) (y : ys) = func x y : zipWith func xs ys 
 
 -- TASK:
 -- Transpose a matrix. Assume all the inner lists have the same length.
@@ -527,6 +583,7 @@ zipWith = undefined
 
 -- >>> transpose [[1]]
 -- [[1]]
+
 -- >>> transpose [[1,2,3],[4,5,6],[7,8,9]]
 -- [[1,4,7],[2,5,8],[3,6,9]]
 -- >>> transpose [[1],[2]]
@@ -535,7 +592,9 @@ zipWith = undefined
 -- [[1,4],[2,5],[3,6]]
 
 transpose :: [[a]] -> [[a]]
-transpose = undefined
+transpose [] = []
+transpose [x] = map (: []) x
+transpose (x : xs) = zipWith (:) x (transpose xs)
 
 -- TASK:
 -- Reverse a list, but in linear time (so if the input list has n elements, you should only be doing at most ~n operations, not n^2)
@@ -543,8 +602,13 @@ transpose = undefined
 
 -- >>> reverse [1,2,3]
 -- [3,2,1]
+
 -- >>> reverse []
 -- []
 
 reverseLinear :: [a] -> [a]
-reverseLinear = undefined
+reverseLinear [] = []
+reverseLinear list = reverseHelper list []
+  where 
+    reverseHelper [] l = l
+    reverseHelper (x : xs) l = reverseHelper xs (x : l)
