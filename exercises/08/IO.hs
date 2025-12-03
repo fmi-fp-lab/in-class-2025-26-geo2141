@@ -57,13 +57,23 @@ getLine = do
 -- Use {readMaybe :: Read a => String -> Maybe a}
 
 getNumber :: IO Integer
-getNumber = undefined
+getNumber = do
+  str <- getLine
+  let cnv = readMaybe str
+  case cnv of
+    Just val  -> pure val
+    _         -> error "parse failure"
 
 -- TASK:
 -- Implement reading a {Bool} from stdin.
 
 getBool :: IO Bool
-getBool = undefined
+getBool = do
+  number <- getLine
+  case number of
+    "False" -> pure False
+    "True"  -> pure True
+    _       -> error "prase failure"
 
 -- TASK:
 -- Implement a function which runs the provided action when
@@ -72,7 +82,11 @@ getBool = undefined
 -- and is an overall very useful function.
 
 whenNothing :: Maybe a -> IO a -> IO a
-whenNothing = undefined
+-- whenNothing mby action = maybe action pure mby
+whenNothing mby action = case mby of 
+  Just val  -> pure val 
+  Nothing   -> do 
+    action  
 
 -- TASK:
 -- {getNumber} and {getBool} are practically the same.
@@ -97,13 +111,17 @@ whenNothing = undefined
 -- Run an IO action only when the given {Bool} is @True 2
 
 when :: Bool -> IO () -> IO ()
-when = undefined
+when event action = maybe action pure maybeEvent
+  where 
+    maybeEvent = if event then Nothing else Just () 
 
 -- TASK:
 -- Repeat a {Maybe a} producing action, until it produces a {Just}, returning the result.
 
 untilJustM :: IO (Maybe a) -> IO a
-untilJustM = undefined
+untilJustM arg = do
+  ptrn <- arg  
+  whenNothing ptrn (untilJustM arg)
 
 -- TASK:
 -- We're going to implement a very simplified version of the Hangman game.
@@ -131,16 +149,37 @@ untilJustM = undefined
 -- 3. Otherwise, we continue playing the game, extending the list of guessed letters.
 
 startHangman :: FilePath -> IO ()
-startHangman = undefined
+startHangman file = do 
+  inp <- untilJustM $ do 
+    arg <- getNumber
+    pure $  if     arg < 0 || arg > 99 
+            then   Nothing  
+            else   Just arg
+  words <- readFile file
+
+
+
+  forever $ playHangman [] (lines words !! fromIntegral inp)
+
 
 playHangman :: [Char] -> String -> IO ()
-playHangman = undefined
+playHangman guessedSoFar target = do
+  guess <- getChar
+
+
+
+  undefined
+  where 
+    contains :: [Char] -> Char -> Bool 
+    
 
 -- TASK:
 -- Run an IO action an infinite amount of times
 
 forever :: IO a -> IO b
-forever = undefined
+forever arg = do
+  arg 
+  forever arg
 
 -- TASK:
 -- Map a function over the result of an IO action.
